@@ -119,6 +119,7 @@ button:hover {
   border-bottom: 1px solid #ccc;
 }
 
+/* Style print struk Alfamart */
 @media print {
   .close-btn,
   .cetak-hide,
@@ -137,5 +138,24 @@ button:hover {
     width: 100%;
     max-width: none;
     border-radius: 0;
+  }
+
+  #strukPopup p strong {
+    font-size: 48px !important;
+    font-family: Arial Black, sans-serif !important;
+    text-transform: uppercase;
+    text-align: center;
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  #strukPopup p {
+    font-family: "Courier New", Courier, monospace !important;
+    font-size: 14px !important;
+    margin: 2px 0;
+  }
+
+  #strukPopup hr {
+    border: 1px dashed #000;
   }
 }
