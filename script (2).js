@@ -11,7 +11,7 @@ const daftarProduk = document.getElementById("daftarProduk");
 const isiKeranjang = document.getElementById("isiKeranjang");
 const cariProduk = document.getElementById("cariProduk");
 const popupContainer = document.getElementById("popupContainer");
-const totalHargaSpan = document.getElementById("totalHargaDisplay"); // FIX ID di sini
+const totalHargaSpan = document.getElementById("totalHargaDisplay");
 
 function tampilkanProduk(list = produk) {
   daftarProduk.innerHTML = "";
@@ -80,8 +80,12 @@ cariProduk.addEventListener("input", () => {
 document.getElementById("checkoutBtn").addEventListener("click", () => {
   if (keranjang.length === 0) return;
   const total = keranjang.reduce((sum, item) => sum + item.jumlah * item.harga, 0);
-  const waktu = new Date().toLocaleString();
-  const alamat = "Jl. Cempaka Raya (Samping awa fried chicken dan praktek dr. Syaiful Anam / Simpang gang mmayang murai)";
+
+  const waktu = new Date();
+  const options = { day: '2-digit', month: 'long', year: 'numeric' };
+  const tanggal = waktu.toLocaleDateString('id-ID', options);
+  const jam = waktu.getHours().toString().padStart(2, '0') + ":" + waktu.getMinutes().toString().padStart(2, '0');
+  const alamat = "Jl. Cempaka Raya (Samping praktek dr. Syaiful Anam)";
 
   const strukHTML = `
     <div class="popup" id="strukPopup">
@@ -92,7 +96,9 @@ document.getElementById("checkoutBtn").addEventListener("click", () => {
       ${keranjang.map(p => `<p>${p.nama} x ${p.jumlah} = Rp${p.jumlah * p.harga}</p>`).join("")}
       <hr/>
       <p><strong>Total: Rp${total}</strong></p>
-      <p>${waktu}</p>
+      <hr/>
+      <p>${tanggal} | ${jam} WIB</p>
+      <p>*** Terima Kasih ***</p>
       <button onclick="downloadTxtStruk()" class="cetak-hide">Download TXT</button>
       <button onclick="printStruk()" class="cetak-hide">Print</button>
     </div>
@@ -100,7 +106,7 @@ document.getElementById("checkoutBtn").addEventListener("click", () => {
   popupContainer.innerHTML = strukHTML;
   popupContainer.classList.remove("hidden");
 
-  riwayat.push({ keranjang: [...keranjang], waktu, total });
+  riwayat.push({ keranjang: [...keranjang], waktu: waktu.toLocaleString(), total });
   localStorage.setItem("riwayatTransaksi", JSON.stringify(riwayat));
   keranjang = [];
   updateKeranjang();
@@ -117,16 +123,22 @@ function printStruk() {
   win.print();
 }
 
-function tutupPopup() {
-  popupContainer.classList.add("hidden");
-  popupContainer.innerHTML = "";
-}
-
 function downloadTxtStruk() {
-  const waktu = new Date().toLocaleString();
-  let isi = `Warung Barokah\n${waktu}\n\n`;
-  isi += keranjang.map(p => `${p.nama} x ${p.jumlah} = Rp${p.jumlah * p.harga}`).join("\n");
-  isi += `\n\nTotal: Rp${keranjang.reduce((s, i) => s + i.jumlah * i.harga, 0)}`;
+  const waktu = new Date();
+  const options = { day: '2-digit', month: 'long', year: 'numeric' };
+  const tanggal = waktu.toLocaleDateString('id-ID', options);
+  const jam = waktu.getHours().toString().padStart(2, '0') + ":" + waktu.getMinutes().toString().padStart(2, '0');
+
+  let isi = `WARUNG BAROKAH\nJl. Cempaka Raya\n\n`;
+  keranjang.forEach(p => {
+    isi += `${p.nama} x ${p.jumlah} = Rp${p.jumlah * p.harga}\n`;
+  });
+  isi += `\n--------------------------------\n`;
+  isi += `Total: Rp${keranjang.reduce((s, i) => s + i.jumlah * i.harga, 0)}\n`;
+  isi += `--------------------------------\n`;
+  isi += `${tanggal} | ${jam} WIB\n\n`;
+  isi += `*** Terima Kasih ***`;
+
   const blob = new Blob([isi], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -134,6 +146,11 @@ function downloadTxtStruk() {
   a.download = "struk.txt";
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function tutupPopup() {
+  popupContainer.classList.add("hidden");
+  popupContainer.innerHTML = "";
 }
 
 document.getElementById("tambahProdukBtn").addEventListener("click", () => {
@@ -197,41 +214,7 @@ document.getElementById("riwayatBtn").addEventListener("click", () => {
         <hr/>
         <p><strong>Total Pendapatan: Rp${totalPendapatan}</strong></p>
       </div>
-      <button onclick="downloadRekapPDF()">Download PDF</button>
-      <button onclick="downloadRekapJPG()">Download JPG</button>
     </div>
   `;
   popupContainer.classList.remove("hidden");
 });
-
-function downloadRekapPDF() {
-  const { jsPDF } = window.jspdf;
-  const riwayatElement = document.getElementById("riwayatList");
-  const originalHeight = riwayatElement.style.maxHeight;
-  riwayatElement.style.maxHeight = "none";
-
-  html2canvas(document.getElementById("riwayatPopup"), { scale: 2 }).then(canvas => {
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF();
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save("riwayat_transaksi.pdf");
-    riwayatElement.style.maxHeight = originalHeight;
-  });
-}
-
-function downloadRekapJPG() {
-  const riwayatElement = document.getElementById("riwayatList");
-  const originalHeight = riwayatElement.style.maxHeight;
-  riwayatElement.style.maxHeight = "none";
-
-  html2canvas(document.getElementById("riwayatPopup"), { scale: 2 }).then(canvas => {
-    const link = document.createElement("a");
-    link.download = "riwayat_transaksi.jpg";
-    link.href = canvas.toDataURL("image/jpeg");
-    link.click();
-    riwayatElement.style.maxHeight = originalHeight;
-  });
-}
